@@ -9,6 +9,7 @@ export async function call<T = unknown>(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        credentials: "include",
         ...(options.headers as HeadersInit),
       },
       body: data !== undefined ? JSON.stringify(data) : undefined,
