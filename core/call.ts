@@ -7,9 +7,9 @@ export async function call<T = unknown>(
     const res = await fetch(url, {
       ...options,
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        credentials: "include",
         ...(options.headers as HeadersInit),
       },
       body: data !== undefined ? JSON.stringify(data) : undefined,
