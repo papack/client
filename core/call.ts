@@ -14,20 +14,36 @@ export async function call<T = unknown>(
       body: data !== undefined ? JSON.stringify(data) : undefined,
     });
 
-    const text: string = await res.text();
+    const text = await res.text();
+
+    let parsed: T | string | null;
+    try {
+      parsed = text ? (JSON.parse(text) as T) : null;
+    } catch {
+      parsed = text;
+    }
 
     if (!res.ok) {
-      throw text || res.statusText || "REQUEST_FAILED";
+      if (typeof parsed === "string" && parsed) {
+        throw parsed;
+      }
+      throw "REQUEST_FAILED";
     }
 
-    try {
-      return text ? (JSON.parse(text) as T) : null;
-    } catch {
-      return text;
-    }
+    return parsed;
   } catch (err: unknown) {
-    if (typeof err === "string") throw err;
-    if (err instanceof Error) throw err.message || "CONNECTION_LOST";
-    throw "CONNECTION_LOST";
+    let msg = "CONNECTION_LOST";
+
+    if (err instanceof Error && err.message) {
+      msg = err.message;
+    } else if (typeof err === "string") {
+      msg = err;
+    }
+
+    throw msg
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
   }
 }
