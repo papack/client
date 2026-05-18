@@ -1,0 +1,56 @@
+export async function upload<T = unknown>(
+  url: string,
+  file: File,
+  options: RequestInit = {},
+): Promise<T | string | null> {
+  try {
+    const res = await fetch(url, {
+      ...options,
+      method: "POST",
+      credentials: "include",
+
+      // Use the file mime type when available
+      headers: {
+        ...(file.type ? { "Content-Type": file.type } : {}),
+        ...(options.headers as HeadersInit),
+      },
+
+      // Stream the file directly as the request body
+      body: file,
+    });
+
+    const text = await res.text();
+
+    let parsed: T | string | null;
+
+    try {
+      parsed = text ? (JSON.parse(text) as T) : null;
+    } catch {
+      parsed = text;
+    }
+
+    if (!res.ok) {
+      if (typeof parsed === "string" && parsed) {
+        throw parsed;
+      }
+
+      throw "UPLOAD_FAILED";
+    }
+
+    return parsed;
+  } catch (err: unknown) {
+    let msg = "CONNECTION_LOST";
+
+    if (err instanceof Error && err.message) {
+      msg = err.message;
+    } else if (typeof err === "string") {
+      msg = err;
+    }
+
+    throw msg
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
+  }
+}
